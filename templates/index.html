@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Denoiser</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .audio-container {
+            margin-top: 20px;
+        }
+        .audio-player {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Audio Denoiser</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Demo with Existing Files</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="demo-file">Select a file:</label>
+                            <select class="form-control" id="demo-file">
+                                <option value="">-- Select a file --</option>
+                                {% for file in valid_files %}
+                                <option value="{{ file }}">{{ file }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div id="demo-results" class="audio-container" style="display: none;">
+                            <h5>Original (Clean)</h5>
+                            <audio id="clean-audio" class="audio-player" controls></audio>
+                            
+                            <h5>Noisy (SNR: <span id="noisy-snr"></span> dB)</h5>
+                            <audio id="noisy-audio" class="audio-player" controls></audio>
+                            
+                            <h5>Denoised (Baseline) (SNR: <span id="baseline-snr"></span> dB)</h5>
+                            <audio id="baseline-audio" class="audio-player" controls></audio>
+                            
+                            <h5>Denoised (Tuned) (SNR: <span id="tuned-snr"></span> dB)</h5>
+                            <audio id="tuned-audio" class="audio-player" controls></audio>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Upload Your Own Audio</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="upload-form" enctype="multipart/form-data">
+                            <div class="form-group mb-3">
+                                <label for="file">Select a .wav file:</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".wav">
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="noise-type">Noise Type:</label>
+                                <select class="form-control" id="noise-type" name="noise_type">
+                                    <option value="">Random</option>
+                                    <option value="gaussian">Gaussian</option>
+                                    <option value="white">White</option>
+                                    <option value="background">Background</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="model-type">Model Type:</label>
+                                <select class="form-control" id="model-type" name="model_type">
+                                    <option value="tuned">Tuned</option>
+                                    <option value="baseline">Baseline</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Process Audio</button>
+                        </form>
+                        
+                        <div id="upload-results" class="audio-container" style="display: none;">
+                            <h5>Original (Clean)</h5>
+                            <audio id="upload-clean-audio" class="audio-player" controls></audio>
+                            <a id="download-clean" class="btn btn-sm btn-secondary">Download</a>
+                            
+                            <h5>Noisy (SNR: <span id="upload-noisy-snr"></span> dB)</h5>
+                            <p id="noise-type-used"></p>
+                            <audio id="upload-noisy-audio" class="audio-player" controls></audio>
+                            <a id="download-noisy" class="btn btn-sm btn-secondary">Download</a>
+                            
+                            <h5>Denoised (SNR: <span id="upload-denoised-snr"></span> dB)</h5>
+                            <p id="model-type-used"></p>
+                            <audio id="upload-denoised-audio" class="audio-player" controls></audio>
+                            <a id="download-denoised" class="btn btn-sm btn-secondary">Download</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('demo-file').addEventListener('change', function() {
+            const filename = this.value;
+            if (!filename) {
+                document.getElementById('demo-results').style.display = 'none';
+                return;
+            }
+            
+            fetch(`/demo/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('clean-audio').src = data.clean_url;
+                    document.getElementById('noisy-audio').src = data.noisy_url;
+                    document.getElementById('baseline-audio').src = data.baseline_url;
+                    document.getElementById('tuned-audio').src = data.tuned_url;
+                    
+                    document.getElementById('noisy-snr').textContent = data.noisy_snr.toFixed(2);
+                    document.getElementById('baseline-snr').textContent = data.baseline_snr.toFixed(2);
+                    document.getElementById('tuned-snr').textContent = data.tuned_snr.toFixed(2);
+                    
+                    document.getElementById('demo-results').style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error));
+        });
+        
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                document.getElementById('upload-clean-audio').src = data.clean_url;
+                document.getElementById('upload-noisy-audio').src = data.noisy_url;
+                document.getElementById('upload-denoised-audio').src = data.denoised_url;
+                
+                document.getElementById('upload-noisy-snr').textContent = data.noisy_snr.toFixed(2);
+                document.getElementById('upload-denoised-snr').textContent = data.denoised_snr.toFixed(2);
+                
+                document.getElementById('noise-type-used').textContent = `Noise Type: ${data.noise_type}`;
+                document.getElementById('model-type-used').textContent = `Model Type: ${data.model_type}`;
+                
+                document.getElementById('download-clean').href = data.clean_url;
+                document.getElementById('download-noisy').href = data.noisy_url;
+                document.getElementById('download-denoised').href = data.denoised_url;
+                
+                document.getElementById('upload-results').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
