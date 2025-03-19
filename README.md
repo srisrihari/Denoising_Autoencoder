@@ -87,6 +87,8 @@ The models used for denoising are trained using the `audio_denoiser.py` script. 
 3. The script will generate noisy versions of the audio files and train the models, saving them for later use.
 
 ## Hgh-Level Diagram
+
+
 ```
 graph TD
     A[Web Browser] --> B[Flask Server]
@@ -115,7 +117,9 @@ graph TD
     style E fill:#ffb,stroke:#333,stroke-width:2px
 ```
 
-##Low-Level Diagram
+## Low-Level Diagram
+
+
 ```
 graph TD
     A[Flask App] --> B[Route Handlers]
