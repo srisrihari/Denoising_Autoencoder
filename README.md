@@ -27,7 +27,6 @@ The Audio Denoiser is a Flask web application that allows users to upload audio 
 
 ## Project Structure
 
-```
 /home/srihari/Documents/New_Project/AI COde Editor/
 │
 ├── flask_app.py          # Main Flask application file
@@ -37,7 +36,7 @@ The Audio Denoiser is a Flask web application that allows users to upload audio 
 ├── templates/            # HTML templates for the web interface
 │   └── index.html        # Main HTML file for the application
 └── uploads/              # Directory for uploaded audio files
-```
+
 
 ## Installation
 
