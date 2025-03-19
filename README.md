@@ -89,78 +89,82 @@ The models used for denoising are trained using the `audio_denoiser.py` script. 
 
 
 ```
-graph TD
-    A[Web Browser] --> B[Flask Server]
-    B --> C[Audio Processing Module]
-    C --> D[Machine Learning Models]
-    D --> E[Processed Audio]
+flowchart TD
+    A[User Interface] --> B{Choose Mode}
+    B -->|Demo Mode| C[Select File]
+    B -->|Upload Mode| D[Upload File]
     
-    subgraph Frontend
-        A
-    end
+    C --> E[Load Clean Audio]
+    E --> F[Add Noise]
+    F --> G[Process with Both Models]
+    G --> H[Display Results]
     
-    subgraph Backend
-        B
-        C
-        D
-    end
+    D --> I[Validate File]
+    I --> J[Process Audio]
+    J --> K[Add Selected Noise]
+    K --> L[Process with Selected Model]
+    L --> M[Display Results]
     
-    subgraph Data
-        E
-    end
+    H --> N[Waveform Visualization]
+    M --> N
     
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style B fill:#bbf,stroke:#333,stroke-width:2px
     style C fill:#bfb,stroke:#333,stroke-width:2px
-    style D fill:#fbb,stroke:#333,stroke-width:2px
-    style E fill:#ffb,stroke:#333,stroke-width:2px
+    style D fill:#bfb,stroke:#333,stroke-width:2px
+    style N fill:#ffb,stroke:#333,stroke-width:2px
 ```
 
 ## Low-Level Diagram
 
 
 ```
-graph TD
-    A[Flask App] --> B[Route Handlers]
-    B --> C[Audio Processing Functions]
-    C --> D[Model Loading]
-    C --> E[Audio Processing]
-    E --> F[Noise Addition]
-    E --> G[Denoising]
+flowchart TD
+    A[Flask App Start] --> B[Initialize Models]
+    B --> C[Load Baseline Model]
+    B --> D[Load Tuned Model]
     
-    subgraph Flask Routes
-        B1[Index Route] --> H[Render Template]
-        B2[Demo Route] --> I[Process Demo Audio]
-        B3[Upload Route] --> J[Handle File Upload]
-        B4[Waveform Route] --> K[Generate Waveform]
-        B5[Download Route] --> L[Serve File]
+    subgraph Route Handlers
+        E[Index Route] --> F[Render Template]
+        G[Demo Route] --> H[Process Demo Audio]
+        I[Upload Route] --> J[Handle File Upload]
+        K[Waveform Route] --> L[Generate Waveform]
+        M[Download Route] --> N[Serve File]
     end
     
     subgraph Audio Processing
-        C1[process_audio_file] --> M[Load Audio]
-        C1 --> N[Standardize Length]
-        C2[add_noise] --> O[Generate Noise]
-        C2 --> P[Combine Audio]
-        C3[denoise_audio] --> Q[Model Prediction]
-    end
-    
-    subgraph Models
-        D1[Baseline Model] --> R[Load H5 File]
-        D2[Tuned Model] --> S[Load H5 File]
+        O[process_audio_file] --> P[Load Audio]
+        P --> Q[Standardize Length]
+        
+        R[add_noise] --> S[Select Noise Type]
+        S -->|Gaussian| T[Generate Gaussian Noise]
+        S -->|White| U[Generate White Noise]
+        S -->|Background| V[Generate Background Noise]
+        T --> W[Combine Audio]
+        U --> W
+        V --> W
+        
+        X[denoise_audio] --> Y[Prepare Input]
+        Y --> Z[Select Model]
+        Z -->|Baseline| AA[Use Baseline Model]
+        Z -->|Tuned| AB[Use Tuned Model]
+        AA --> AC[Get Prediction]
+        AB --> AC
     end
     
     subgraph Frontend
-        T[HTML Template] --> U[Bootstrap UI]
-        U --> V[Audio Players]
-        U --> W[File Upload]
-        U --> X[Model Selection]
+        AD[HTML Template] --> AE[Initialize UI]
+        AE --> AF[Set Up Audio Players]
+        AE --> AG[Set Up File Upload]
+        AE --> AH[Set Up Model Selection]
+        AE --> AI[Set Up Waveform Display]
     end
     
     style A fill:#f9f,stroke:#333,stroke-width:2px
     style B fill:#bbf,stroke:#333,stroke-width:2px
-    style C fill:#bfb,stroke:#333,stroke-width:2px
-    style D fill:#fbb,stroke:#333,stroke-width:2px
-    style T fill:#ffb,stroke:#333,stroke-width:2px
+    style E fill:#bfb,stroke:#333,stroke-width:2px
+    style O fill:#bfb,stroke:#333,stroke-width:2px
+    style AD fill:#ffb,stroke:#333,stroke-width:2px
 ```
 
 ## Contributing
