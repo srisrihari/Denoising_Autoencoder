@@ -1,0 +1,8 @@
+Flask
+keras
+librosa
+matplotlib
+numpy
+soundfile
+tensorflow
+Werkzeug

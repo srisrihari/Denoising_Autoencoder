@@ -1,19 +1,26 @@
-from flask import Flask, request, render_template, jsonify, send_file
+from flask import Flask, after_this_request, request, render_template, jsonify, send_file
+import matplotlib
+matplotlib.use('Agg')  # Use the Agg backend for non-interactive plotting
 import os
 import numpy as np
 import librosa
 import soundfile as sf
 import tensorflow as tf
 import io
+import matplotlib.pyplot as plt
 from werkzeug.utils import secure_filename
 from tensorflow.keras.losses import MeanSquaredError
 
 app = Flask(__name__)
 
 # Load the trained models
-mse = MeanSquaredError()
-baseline_model = tf.keras.models.load_model('denoise_baseline.h5', custom_objects={'mse': mse})
-tuned_model = tf.keras.models.load_model('denoise_tuned.h5', custom_objects={'mse': mse})
+try:
+    mse = MeanSquaredError()
+    baseline_model = tf.keras.models.load_model('denoise_baseline.h5', custom_objects={'mse': mse})
+    tuned_model = tf.keras.models.load_model('denoise_tuned.h5', custom_objects={'mse': mse})
+except Exception as e:
+    print(f"Error loading models: {e}")
+    exit(1)
 
 # Load list of valid files
 with open('valid_files.txt', 'r') as f:
@@ -186,6 +193,40 @@ def upload_file():
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+@app.route('/waveform/<filename>')
+def waveform(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    waveform_image_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{filename}_waveform.png')
+    
+    try:
+        audio, sr = librosa.load(file_path, sr=44100)
+        
+        # Check if audio is empty
+        if len(audio) == 0:
+            return jsonify({'error': 'Audio file is empty'}), 400
+        
+        plt.figure(figsize=(15, 5))
+        plt.plot(audio)
+        plt.title(f'Waveform of {filename}')
+        plt.xlabel('Samples')
+        plt.ylabel('Amplitude')
+        plt.xlim(0, len(audio))
+        plt.ylim(-1, 1)  # Set y-limits to ensure the waveform is visible
+        plt.savefig(waveform_image_path)
+        plt.close()
+        
+        @after_this_request
+        def remove_file(response):
+            try:
+                os.remove(waveform_image_path)
+            except Exception as e:
+                print(f"Error removing temporary file: {e}")
+            return response
+            
+        return send_file(waveform_image_path, mimetype='image/png')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/download/<filename>')
 def download_file(filename):
