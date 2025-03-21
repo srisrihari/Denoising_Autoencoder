@@ -4,5 +4,5 @@ librosa
 matplotlib
 numpy
 soundfile
-tensorflow-cpu
+tensorflow
 Werkzeug
